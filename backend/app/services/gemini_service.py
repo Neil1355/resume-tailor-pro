@@ -16,19 +16,30 @@ class GeminiService:
             raise TimeoutError("GOOGLE_API_KEY is missing for Gemini API calls.")
         if self.model is None:
             genai.configure(api_key=self.api_key)
-            # List available models and pick the first generative model
+            # Pick a model that explicitly supports generateContent.
             try:
                 available_models = genai.list_models()
-                model_names = [m.name for m in available_models if "generativeai.googleapis.com" in str(m.supported_generation_methods)]
-                
+                model_names = [
+                    m.name
+                    for m in available_models
+                    if "generateContent" in getattr(m, "supported_generation_methods", [])
+                ]
+
                 if not model_names:
                     raise RuntimeError(
                         "No generative models available in your account. "
                         "Visit https://aistudio.google.com to verify your API key and available models."
                     )
-                
-                # Use the first available model (usually the most capable)
-                chosen_model_name = model_names[0].split("/")[-1]  # Extract model ID from full name
+
+                preferred_order = [
+                    "models/gemini-1.5-flash",
+                    "models/gemini-1.5-pro",
+                    "models/gemini-pro",
+                ]
+                chosen_model_name = next(
+                    (name for name in preferred_order if name in model_names),
+                    model_names[0],
+                )
                 self.model = genai.GenerativeModel(chosen_model_name)
                 return self.model
             except Exception as e:
