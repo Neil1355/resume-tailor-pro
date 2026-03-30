@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
+import { tailorResume } from "@/api/resumeTailorClient";
 import UploadZone from "@/components/UploadZone";
 import JobDescriptionInput from "@/components/JobDescriptionInput";
 import TailorButton from "@/components/TailorButton";
@@ -39,16 +40,7 @@ const Index = () => {
     }, 300);
 
     try {
-      const formData = new FormData();
-      formData.append("resume", file);
-      formData.append("job_description", jobDescription);
-
-      const res = await fetch("http://localhost:8000/api/tailor", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Tailoring failed");
+      const result = await tailorResume(jobDescription);
 
       clearInterval(intervalRef.current);
       setProgress(100);
@@ -59,13 +51,15 @@ const Index = () => {
         toast.success("Resume tailored successfully!", {
           description: "Your document is ready for export.",
         });
+        // Store result for download
+        sessionStorage.setItem("tailorResult", JSON.stringify(result));
       }, 500);
-    } catch {
+    } catch (error) {
       clearInterval(intervalRef.current);
       setLoading(false);
       setProgress(0);
       toast.error("Something went wrong", {
-        description: "Could not reach the tailoring service. Please try again.",
+        description: error instanceof Error ? error.message : "Could not tailor resume. Please try again.",
       });
     }
   }, [file, jobDescription, canTailor]);

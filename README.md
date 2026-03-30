@@ -2,18 +2,44 @@
 
 This repository contains:
 
-- A React frontend in `src/`
-- A Python FastAPI backend in `backend/` that uses `docxtpl` and Gemini to tailor resume bullet points while preserving strict template formatting
+- A React frontend in `src/` (deploy to Vercel)
+- A Python FastAPI backend in `backend/` that uses `docxtpl` and Gemini to tailor resume bullet points while preserving strict template formatting (deploy to Fly.io, DigitalOcean, or similar)
 
-## Backend Quick Start
+## Quick Start (Local Development)
 
-1. Go to `backend/`
-2. Install dependencies:
-	- `pip install -r requirements.txt`
-3. Create `.env` from `.env.example` and set `GOOGLE_API_KEY`
-4. Add `backend/app/templates/master_template.docx`
-5. Ensure template uses Jinja tags like `{{bullet_1}}`, `{{bullet_2}}`
-6. Run API:
-	- `uvicorn app.main:app --reload --port 8000`
+### Prerequisites
+- Node.js/npm (frontend)
+- Python 3.11+ (backend)
+- Google Gemini API key
 
-Detailed backend docs: `backend/README.md`
+### Setup
+
+1. **Frontend** (.env.local already created, points to localhost:8000):
+   ```bash
+   npm install
+   npm run dev
+   ```
+   Opens http://localhost:8080
+
+2. **Backend**:
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   # Create .env with your GOOGLE_API_KEY
+   uvicorn app.main:app --reload --port 8000
+   ```
+
+## Deployment
+
+- **Frontend**: Deploy to [Vercel](docs/VERCEL_DEPLOYMENT.md) (free tier available)
+- **Backend**: Deploy to [Fly.io](docs/FLY_DEPLOYMENT.md) (free tier available) or [DigitalOcean](docs/DIGITALOCEAN_DEPLOYMENT.md) ($5/month)
+
+See deployment docs for detailed steps on connecting frontend to backend URL.
+
+## Backend Features
+
+- Strict DOCX template rendering with Jinja2 placeholders
+- Gemini AI for JD-based bullet point rewriting
+- PDF conversion via LibreOffice/docx2pdf
+- SlowAPI rate limiting (5/min per IP)
+- Global error handlers with helpful messages

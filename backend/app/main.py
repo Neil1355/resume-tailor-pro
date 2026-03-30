@@ -2,6 +2,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -13,6 +14,15 @@ from app.services.pdf_service import PdfService
 from app.services.template_service import TemplateService
 
 app = FastAPI(title=settings.app_name)
+
+# CORS configuration to allow requests from Vercel frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins in dev; restrict in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 
