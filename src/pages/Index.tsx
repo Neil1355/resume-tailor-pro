@@ -2,7 +2,11 @@ import { useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
-import { downloadTailoredResume, tailorResume } from "@/api/resumeTailorClient";
+import {
+  downloadTailoredResume,
+  tailorResume,
+  type TailorResponse,
+} from "@/api/resumeTailorClient";
 import UploadZone from "@/components/UploadZone";
 import JobDescriptionInput from "@/components/JobDescriptionInput";
 import TailorButton from "@/components/TailorButton";
@@ -24,6 +28,8 @@ const Index = () => {
   const [progress, setProgress] = useState(0);
   const [tailored, setTailored] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [showChanges, setShowChanges] = useState(false);
+  const [tailorResult, setTailorResult] = useState<TailorResponse | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
   const canTailor = file && jobDescription.trim().length > 10;
@@ -33,6 +39,8 @@ const Index = () => {
     setLoading(true);
     setProgress(0);
     setTailored(false);
+    setShowChanges(false);
+    setTailorResult(null);
 
     // Simulate progress while waiting for API
     intervalRef.current = setInterval(() => {
@@ -48,11 +56,10 @@ const Index = () => {
       setTimeout(() => {
         setLoading(false);
         setTailored(true);
+        setTailorResult(result);
         toast.success("Resume tailored successfully!", {
           description: "Your document is ready for export.",
         });
-        // Store result for download
-        sessionStorage.setItem("tailorResult", JSON.stringify(result));
       }, 500);
     } catch (error) {
       clearInterval(intervalRef.current);
@@ -63,6 +70,21 @@ const Index = () => {
       });
     }
   }, [file, jobDescription, canTailor]);
+
+  const previewRows = tailorResult
+    ? Object.keys(tailorResult.original_bullets)
+        .sort()
+        .map((tag) => {
+          const original = tailorResult.original_bullets[tag] || "";
+          const updated = tailorResult.tailored_bullets[tag] || original;
+          return {
+            tag,
+            original,
+            updated,
+            changed: original.trim() !== updated.trim(),
+          };
+        })
+    : [];
 
   const handleExport = async (format: "pdf" | "docx") => {
     setExportOpen(false);
@@ -137,19 +159,68 @@ const Index = () => {
 
           {/* Export button */}
           {tailored && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <button
-                onClick={() => setExportOpen(true)}
-                className="w-full h-12 rounded-xl border border-success/40 bg-success/10 text-success font-medium flex items-center justify-center gap-2 hover:bg-success/20 transition-colors"
+            <>
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="grid grid-cols-1 sm:grid-cols-2 gap-3"
               >
-                <Download className="w-4 h-4" />
-                Export Tailored Resume
-              </button>
-            </motion.div>
+                <button
+                  onClick={() => setShowChanges((prev) => !prev)}
+                  className="w-full h-12 rounded-xl border border-primary/40 bg-primary/10 text-primary font-medium flex items-center justify-center gap-2 hover:bg-primary/20 transition-colors"
+                >
+                  {showChanges ? "Hide What's Changed" : "See What's Changed"}
+                </button>
+
+                <button
+                  onClick={() => setExportOpen(true)}
+                  className="w-full h-12 rounded-xl border border-success/40 bg-success/10 text-success font-medium flex items-center justify-center gap-2 hover:bg-success/20 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Export Tailored Resume
+                </button>
+              </motion.div>
+
+              {showChanges && tailorResult && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="glass-card p-4 md:p-5 space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-foreground">What Changed</h3>
+                    <span className="text-xs text-muted-foreground">
+                      {previewRows.filter((r) => r.changed).length} of {previewRows.length} bullets updated
+                    </span>
+                  </div>
+
+                  <div className="space-y-3 max-h-[340px] overflow-auto pr-1">
+                    {previewRows.map((row) => (
+                      <div key={row.tag} className="rounded-lg border border-border/70 bg-secondary/30 p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">{row.tag}</p>
+                          <span
+                            className={`text-[11px] px-2 py-0.5 rounded-full ${
+                              row.changed
+                                ? "bg-success/20 text-success"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {row.changed ? "Updated" : "Unchanged"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-1">Original</p>
+                        <p className="text-sm text-foreground/90">{row.original}</p>
+                        <p className="text-xs text-muted-foreground mt-3 mb-1">Tailored</p>
+                        <p className="text-sm text-foreground">{row.updated}</p>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </>
           )}
         </div>
       </main>

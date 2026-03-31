@@ -9,6 +9,8 @@ export interface TailorResponse {
   message: string;
   output_docx_path: string;
   output_pdf_path: string | null;
+  original_bullets: Record<string, string>;
+  tailored_bullets: Record<string, string>;
 }
 
 export async function tailorResume(jobDescription: string): Promise<TailorResponse> {

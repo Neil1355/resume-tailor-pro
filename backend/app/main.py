@@ -96,6 +96,8 @@ def tailor_resume(request: Request, payload: TailorRequest) -> TailorResponse:
         message=message,
         output_docx_path=str(rendered_docx),
         output_pdf_path=str(rendered_pdf) if rendered_pdf else None,
+        original_bullets=bullets,
+        tailored_bullets=safe_context,
     )
 
 
