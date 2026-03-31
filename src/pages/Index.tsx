@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
-import { tailorResume } from "@/api/resumeTailorClient";
+import { downloadTailoredResume, tailorResume } from "@/api/resumeTailorClient";
 import UploadZone from "@/components/UploadZone";
 import JobDescriptionInput from "@/components/JobDescriptionInput";
 import TailorButton from "@/components/TailorButton";
@@ -64,10 +64,19 @@ const Index = () => {
     }
   }, [file, jobDescription, canTailor]);
 
-  const handleExport = (format: "pdf" | "docx") => {
+  const handleExport = async (format: "pdf" | "docx") => {
     setExportOpen(false);
-    toast.success(`Downloading as ${format.toUpperCase()}...`);
-    // In production, trigger the actual download here
+    try {
+      await downloadTailoredResume(format);
+      toast.success(`Downloading as ${format.toUpperCase()}...`);
+    } catch (error) {
+      toast.error("Download failed", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Could not download the requested file.",
+      });
+    }
   };
 
   return (

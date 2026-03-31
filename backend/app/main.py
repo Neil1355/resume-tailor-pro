@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -97,3 +97,25 @@ def tailor_resume(request: Request, payload: TailorRequest) -> TailorResponse:
         output_docx_path=str(rendered_docx),
         output_pdf_path=str(rendered_pdf) if rendered_pdf else None,
     )
+
+
+@app.get("/api/download/{file_format}")
+def download_tailored_resume(file_format: str):
+    if file_format == "docx":
+        file_path = settings.rendered_docx_output
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        filename = "tailored_resume.docx"
+    elif file_format == "pdf":
+        file_path = settings.rendered_pdf_output
+        media_type = "application/pdf"
+        filename = "tailored_resume.pdf"
+    else:
+        raise HTTPException(status_code=400, detail="Invalid format. Use 'docx' or 'pdf'.")
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Requested {file_format.upper()} file is not available yet.",
+        )
+
+    return FileResponse(path=file_path, media_type=media_type, filename=filename)

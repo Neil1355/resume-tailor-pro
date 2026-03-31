@@ -35,3 +35,21 @@ export async function checkHealth(): Promise<{ status: string }> {
   }
   return response.json();
 }
+
+export async function downloadTailoredResume(format: "pdf" | "docx"): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/download/${format}`);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Download failed: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `tailored_resume.${format}`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
