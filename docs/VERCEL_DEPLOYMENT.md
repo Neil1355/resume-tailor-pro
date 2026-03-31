@@ -30,11 +30,29 @@ vercel --prod
 ```
 
 ## Step 3: Set Backend URL After Backend Deploy
-After deploying your backend to Fly.io/DigitalOcean:
+After deploying your backend (Render Docker recommended):
 1. Get your backend API URL (e.g., https://my-resume-api.fly.dev)
 2. In Vercel Dashboard → Project Settings → Environment Variables
 3. Update `VITE_API_BASE_URL` to your backend URL
 4. Vercel auto-redeploys with new env var
+
+## Backend on Render (Docker + LibreOffice)
+
+To guarantee PDF output on Render Linux, use Docker deployment with LibreOffice.
+
+1. In Render, create/update your backend service.
+2. Set **Root Directory** to `backend`.
+3. Set **Runtime** to `Docker`.
+4. Render will build from `backend/Dockerfile`.
+5. Add env vars:
+  - `GOOGLE_API_KEY=<your_key>`
+  - `MASTER_TEMPLATE_PATH=app/templates/master_template.docx`
+  - `LIBREOFFICE_BIN=soffice`
+  - `RATE_LIMIT_PER_MINUTE=5`
+  - `OUTPUT_DIR=output`
+6. Deploy and test:
+  - `GET /health`
+  - `POST /api/tailor`
 
 ## Common Issues
 

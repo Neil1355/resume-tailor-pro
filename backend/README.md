@@ -28,6 +28,23 @@ backend/
 - LibreOffice installed and available as `soffice` in PATH (recommended)
 - Gemini API key
 
+## Render Docker Deployment (Recommended for PDF)
+
+Use the included `Dockerfile` so LibreOffice is always available in production.
+
+1. In Render, create a new Web Service from this repository.
+2. Set Root Directory to `backend`.
+3. Set Environment to `Docker`.
+4. Start Command is not needed (defined in `Dockerfile`).
+5. Add environment variables:
+  - `GOOGLE_API_KEY`
+  - `MASTER_TEMPLATE_PATH=app/templates/master_template.docx`
+  - `LIBREOFFICE_BIN=soffice`
+  - `RATE_LIMIT_PER_MINUTE=5`
+  - `OUTPUT_DIR=output`
+
+This avoids the Linux `docx2pdf` limitation and uses LibreOffice for DOCX to PDF conversion.
+
 ## Setup
 
 1. Create and activate a virtual environment.
