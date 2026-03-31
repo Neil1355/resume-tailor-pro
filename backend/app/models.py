@@ -8,4 +8,4 @@ class TailorRequest(BaseModel):
 class TailorResponse(BaseModel):
     message: str
     output_docx_path: str
-    output_pdf_path: str
+    output_pdf_path: str | None

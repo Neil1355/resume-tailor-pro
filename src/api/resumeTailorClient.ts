@@ -8,7 +8,7 @@ export interface TailorRequest {
 export interface TailorResponse {
   message: string;
   output_docx_path: string;
-  output_pdf_path: string;
+  output_pdf_path: string | null;
 }
 
 export async function tailorResume(jobDescription: string): Promise<TailorResponse> {

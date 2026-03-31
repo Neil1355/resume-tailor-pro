@@ -81,10 +81,19 @@ def tailor_resume(request: Request, payload: TailorRequest) -> TailorResponse:
         safe_context,
         settings.rendered_docx_output,
     )
-    rendered_pdf = pdf_service.convert_docx_to_pdf(rendered_docx, Path(settings.output_dir))
+    rendered_pdf: Path | None = None
+    message = "Resume tailored successfully."
+    try:
+        rendered_pdf = pdf_service.convert_docx_to_pdf(rendered_docx, Path(settings.output_dir))
+    except RuntimeError:
+        # On Linux hosts without LibreOffice, DOCX generation still succeeds.
+        message = (
+            "Resume tailored successfully. PDF conversion unavailable on this host; "
+            "DOCX output is ready."
+        )
 
     return TailorResponse(
-        message="Resume tailored successfully.",
+        message=message,
         output_docx_path=str(rendered_docx),
-        output_pdf_path=str(rendered_pdf),
+        output_pdf_path=str(rendered_pdf) if rendered_pdf else None,
     )
