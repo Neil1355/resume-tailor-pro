@@ -102,7 +102,19 @@ def security_summary(request: Request):
 @limiter.limit(f"{settings.rate_limit_per_minute}/minute")
 def tailor_resume(request: Request, payload: TailorRequest) -> TailorResponse:
     bullets = template_service.load_master_bullets(Path("app/data/master_bullets.json"))
-    rewritten_bullets = gemini_service.rewrite_bullets(payload.job_description, bullets)
+    try:
+        rewritten_bullets = gemini_service.rewrite_bullets(payload.job_description, bullets)
+    except RuntimeError as exc:
+        message = str(exc).lower()
+        if "api_key_invalid" in message or "api key expired" in message or "api key" in message:
+            raise HTTPException(
+                status_code=502,
+                detail="Gemini API key is invalid or expired. Update GOOGLE_API_KEY in backend environment.",
+            ) from exc
+        raise HTTPException(
+            status_code=502,
+            detail="Gemini service request failed. Please try again shortly.",
+        ) from exc
 
     safe_context = bullets.copy()
     safe_context.update({k: rewritten_bullets.get(k, bullets[k]) for k in bullets.keys()})
