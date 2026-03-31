@@ -42,6 +42,7 @@ Use the included `Dockerfile` so LibreOffice is always available in production.
   - `LIBREOFFICE_BIN=soffice`
   - `RATE_LIMIT_PER_MINUTE=5`
   - `OUTPUT_DIR=output`
+  - `CORS_ORIGINS=https://your-frontend.vercel.app`
 
 This avoids the Linux `docx2pdf` limitation and uses LibreOffice for DOCX to PDF conversion.
 

@@ -55,13 +55,24 @@ class GeminiService:
         )
 
         prompt = (
-            "You are a professional resume writer. Rephrase the following experience bullet "
-            "points from Neil's resume to match these keywords. Constraint: Keep the sentence "
-            "length similar to the original to prevent layout shifts. Return only a JSON object "
-            "mapping the tag names to the new text.\n\n"
-            "Job Description:\n"
+            "You are an expert technical resume writer and ATS optimization specialist.\n\n"
+            "Your task: Rewrite this resume's bullet points so they align with the role described below. "
+            "The job description may contain paragraphs, mixed formatting, or unclear structure-extract "
+            "the true responsibilities, required skills, and keywords before rewriting.\n\n"
+            "Rewrite rules:\n"
+            "- Preserve the original meaning and truthfulness of each bullet.\n"
+            "- Match the tone, vocabulary, and skill emphasis of the job description.\n"
+            "- Incorporate relevant keywords naturally (no keyword stuffing).\n"
+            "- Keep each rewritten bullet approximately the same length as the original to avoid layout shifts.\n"
+            "- Improve clarity, action verbs, and technical specificity.\n"
+            "- Do NOT invent experience Neil does not have.\n\n"
+            "Output format:\n"
+            "Return ONLY a JSON object where:\n"
+            "- Keys must remain exactly the provided tags (for example: bullet_1, bullet_2).\n"
+            "- Values are the rewritten bullet text.\n\n"
+            "Job Description (raw text, may be messy):\n"
             f"{job_description}\n\n"
-            "Original bullet points:\n"
+            "Original Bullet Points:\n"
             f"{bullet_lines}\n"
         )
 

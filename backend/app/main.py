@@ -18,8 +18,8 @@ app = FastAPI(title=settings.app_name)
 # CORS configuration to allow requests from Vercel frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins in dev; restrict in production
-    allow_credentials=True,
+    allow_origins=settings.allowed_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -59,7 +59,7 @@ async def handle_timeout(_: Request, exc: TimeoutError):
 async def handle_unexpected_error(_: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Internal server error: {exc}"},
+        content={"detail": "Internal server error."},
     )
 
 

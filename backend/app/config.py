@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     libreoffice_bin: str = "soffice"
     rate_limit_per_minute: int = 5
     output_dir: str = "output"
+    cors_origins: str = "http://localhost:8080"
 
     @property
     def master_template(self) -> Path:
@@ -25,6 +26,10 @@ class Settings(BaseSettings):
     @property
     def rendered_pdf_output(self) -> Path:
         return Path(self.output_dir) / "tailored_resume.pdf"
+
+    @property
+    def allowed_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 if TYPE_CHECKING:
