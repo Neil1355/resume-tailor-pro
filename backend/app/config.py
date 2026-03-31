@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 5
     output_dir: str = "output"
     cors_origins: str = "http://localhost:8080"
+    cors_origin_regex: str = r"^https://.*\.vercel\.app$|^http://localhost(:\d+)?$"
     admin_audit_token: str = ""
 
     @property
