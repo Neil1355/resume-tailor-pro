@@ -12,6 +12,7 @@
 - Added "See What's Changed" preview in the frontend with bullet-by-bullet original vs tailored text before export.
 - Cleaned project scaffold by removing unused UI/component/test files and redundant deployment summary docs.
 - Hardened backend CORS and exception responses; added `CORS_ORIGINS` configuration.
+- Added protected `/admin/security-summary` endpoint with token auth for runtime security and dependency version checks.
 - Updated frontend/backend dependencies and lockfiles from audit findings; npm and pip-audit now report no known package CVEs in project dependencies.
 - Added SlowAPI rate limiting (`5/minute`) on tailoring endpoint.
 - Added global error handlers for file-not-found and API timeout conditions with HTTP 500 responses.

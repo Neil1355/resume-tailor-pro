@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 5
     output_dir: str = "output"
     cors_origins: str = "http://localhost:8080"
+    admin_audit_token: str = ""
 
     @property
     def master_template(self) -> Path:

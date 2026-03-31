@@ -1,4 +1,7 @@
 from pathlib import Path
+from datetime import datetime, timezone
+from importlib.metadata import version
+import secrets
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
@@ -66,6 +69,33 @@ async def handle_unexpected_error(_: Request, exc: Exception):
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/admin/security-summary")
+def security_summary(request: Request):
+    provided_token = request.headers.get("x-admin-token", "")
+    expected_token = settings.admin_audit_token
+
+    if not expected_token or not secrets.compare_digest(provided_token, expected_token):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    return {
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "service": settings.app_name,
+        "security": {
+            "rate_limit_per_minute": settings.rate_limit_per_minute,
+            "cors_origins_count": len(settings.allowed_origins),
+            "master_template_exists": settings.master_template.exists(),
+            "output_dir_exists": Path(settings.output_dir).exists(),
+            "admin_token_configured": bool(settings.admin_audit_token),
+        },
+        "versions": {
+            "fastapi": version("fastapi"),
+            "starlette": version("starlette"),
+            "python-multipart": version("python-multipart"),
+            "uvicorn": version("uvicorn"),
+        },
+    }
 
 
 @app.post("/api/tailor", response_model=TailorResponse)

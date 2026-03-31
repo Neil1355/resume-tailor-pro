@@ -43,6 +43,7 @@ Use the included `Dockerfile` so LibreOffice is always available in production.
   - `RATE_LIMIT_PER_MINUTE=5`
   - `OUTPUT_DIR=output`
   - `CORS_ORIGINS=https://your-frontend.vercel.app`
+  - `ADMIN_AUDIT_TOKEN=<long-random-token>`
 
 This avoids the Linux `docx2pdf` limitation and uses LibreOffice for DOCX to PDF conversion.
 
@@ -64,6 +65,8 @@ uvicorn app.main:app --reload --port 8000
 
 - GET `/health`
 - POST `/api/tailor`
+- GET `/api/download/{docx|pdf}`
+- GET `/admin/security-summary` (requires `x-admin-token` header)
 
 Request body:
 {
