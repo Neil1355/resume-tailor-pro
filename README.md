@@ -1,5 +1,29 @@
 # Resume Tailor Pro
 
+## Portfolio Snapshot
+
+Resume Tailor Pro is a full-stack AI application that rewrites resume bullets against a target job description while preserving strict Word-template layout constraints for export-ready output.
+
+### Why This Project Is Strong Portfolio Material
+
+- Solves a real hiring workflow problem end-to-end (analysis, rewriting, preview, export)
+- Demonstrates production deployment across separate frontend/backend services
+- Balances AI quality with formatting stability constraints in document generation
+- Includes practical security hardening (rate limiting, CORS controls, token-protected admin endpoint, dependency audits)
+
+### Architecture Highlights
+
+- Frontend: React + Vite UI with progress flow, change preview, and file export
+- Backend: FastAPI service with Gemini-based rewriting, docxtpl rendering, and PDF conversion pipeline
+- Template strategy: stable master `.docx` with bullet tags (`bullet_1`, `bullet_2`, etc.)
+- Export pipeline: generates tailored DOCX and optional PDF (LibreOffice-backed in containerized deploys)
+
+### Resume Bullets You Can Reuse
+
+- Built and deployed a full-stack AI resume-tailoring platform using React/Vite and FastAPI, enabling JD-aligned bullet rewriting with stable DOCX/PDF export.
+- Engineered a layout-safe document generation workflow with `docxtpl` placeholders and controlled LLM prompting to preserve resume formatting fidelity.
+- Implemented security and reliability controls including endpoint-specific rate limiting, CORS hardening for preview domains, token-protected admin diagnostics, and dependency vulnerability remediation.
+
 This repository contains:
 
 - A React frontend in `src/` (deploy to Vercel)

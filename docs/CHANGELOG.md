@@ -20,3 +20,4 @@
 - Added SlowAPI rate limiting (`5/minute`) on tailoring endpoint.
 - Added global error handlers for file-not-found and API timeout conditions with HTTP 500 responses.
 - Added backend setup/configuration docs and sample data/template guidance.
+- Added a portfolio-ready README snapshot section including architecture highlights and reusable resume bullets.
