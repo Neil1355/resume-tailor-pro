@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     master_template_path: str = "app/templates/master_template.docx"
     libreoffice_bin: str = "soffice"
     rate_limit_per_minute: int = 5
+    download_rate_limit_per_minute: int = 20
+    admin_rate_limit_per_minute: int = 10
     output_dir: str = "output"
     cors_origins: str = "http://localhost:8080"
     cors_origin_regex: str = r"^https://.*\.vercel\.app$|^http://localhost(:\d+)?$"

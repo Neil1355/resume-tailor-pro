@@ -14,6 +14,8 @@
 - Hardened backend CORS and exception responses; added `CORS_ORIGINS` configuration.
 - Added protected `/admin/security-summary` endpoint with token auth for runtime security and dependency version checks.
 - Improved `/api/tailor` error handling to return actionable `502` when Gemini API key is invalid/expired.
+- Added endpoint-specific rate limits for download/admin routes and security headers middleware (`nosniff`, frame deny, referrer policy, permissions policy).
+- Added `CORS_ORIGIN_REGEX` support for stable Vercel preview-domain preflight handling.
 - Updated frontend/backend dependencies and lockfiles from audit findings; npm and pip-audit now report no known package CVEs in project dependencies.
 - Added SlowAPI rate limiting (`5/minute`) on tailoring endpoint.
 - Added global error handlers for file-not-found and API timeout conditions with HTTP 500 responses.

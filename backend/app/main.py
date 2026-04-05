@@ -31,6 +31,16 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 
 
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
+
+
 def rate_limit_handler(request: Request, exc: Exception):
     return _rate_limit_exceeded_handler(request, exc)  # type: ignore[arg-type]
 
@@ -73,6 +83,7 @@ def health() -> dict[str, str]:
 
 
 @app.get("/admin/security-summary")
+@limiter.limit(f"{settings.admin_rate_limit_per_minute}/minute")
 def security_summary(request: Request):
     provided_token = request.headers.get("x-admin-token", "")
     expected_token = settings.admin_audit_token
@@ -145,7 +156,8 @@ def tailor_resume(request: Request, payload: TailorRequest) -> TailorResponse:
 
 
 @app.get("/api/download/{file_format}")
-def download_tailored_resume(file_format: str):
+@limiter.limit(f"{settings.download_rate_limit_per_minute}/minute")
+def download_tailored_resume(request: Request, file_format: str):
     if file_format == "docx":
         file_path = settings.rendered_docx_output
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

@@ -41,6 +41,8 @@ Use the included `Dockerfile` so LibreOffice is always available in production.
   - `MASTER_TEMPLATE_PATH=app/templates/master_template.docx`
   - `LIBREOFFICE_BIN=soffice`
   - `RATE_LIMIT_PER_MINUTE=5`
+  - `DOWNLOAD_RATE_LIMIT_PER_MINUTE=20`
+  - `ADMIN_RATE_LIMIT_PER_MINUTE=10`
   - `OUTPUT_DIR=output`
   - `CORS_ORIGINS=https://your-frontend.vercel.app`
   - `CORS_ORIGIN_REGEX=^https://.*\\.vercel\\.app$|^http://localhost(:\\d+)?$`

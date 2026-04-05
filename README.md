@@ -32,7 +32,7 @@ This repository contains:
 ## Deployment
 
 - **Frontend**: Deploy to [Vercel](docs/VERCEL_DEPLOYMENT.md) (free tier available)
-- **Backend**: Deploy to [Fly.io](docs/FLY_DEPLOYMENT.md) (free tier available) or [DigitalOcean](docs/DIGITALOCEAN_DEPLOYMENT.md) ($5/month)
+- **Backend**: Deploy to Render/Fly.io/DigitalOcean (see [backend/README.md](backend/README.md) for Docker + LibreOffice details)
 
 See deployment docs for detailed steps on connecting frontend to backend URL.
 
@@ -43,3 +43,19 @@ See deployment docs for detailed steps on connecting frontend to backend URL.
 - PDF conversion via LibreOffice/docx2pdf
 - SlowAPI rate limiting (5/min per IP)
 - Global error handlers with helpful messages
+
+## Security Checklist
+
+- Keep secrets only in environment variables (`backend/.env`, Render, Vercel), never in tracked files.
+- Set `CORS_ORIGINS` and `CORS_ORIGIN_REGEX` for your frontend domains.
+- Set `ADMIN_AUDIT_TOKEN` to use the protected `/admin/security-summary` endpoint.
+- Rotate Gemini key immediately if exposed.
+- Run regular audits:
+   - `npm audit --json`
+   - `python -m pip_audit` (inside backend venv)
+
+## Project TODO
+
+- Add authenticated user accounts for multi-user resume storage.
+- Add persistent storage for generated files (currently local output directory).
+- Add integration tests for tailoring + download flows against deployed environments.
