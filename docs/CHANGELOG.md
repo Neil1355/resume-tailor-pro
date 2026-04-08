@@ -21,6 +21,9 @@
 - Added resume parsing service to extract job positions and bullet points from uploaded DOCX files.
 - Updated `/api/tailor` endpoint to accept file upload with FormData instead of static master bullets.
 - Enhanced "See What's Changed" preview to group bullets by job position/title, showing position headers with their associated before/after bullets.
+- Fixed resume parser to be more strict about position detection (requires full bold formatting) and bullet point matching (requires marker + content).
+- Fixed bullet tagging to properly assign bullet_N tags through the parsing pipeline.
+- Fixed PDF download endpoint by standardizing generated PDF filename to "tailored_resume.pdf".
 - Added SlowAPI rate limiting (`5/minute`) on tailoring endpoint.
 - Added global error handlers for file-not-found and API timeout conditions with HTTP 500 responses.
 - Added backend setup/configuration docs and sample data/template guidance.

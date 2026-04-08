@@ -167,11 +167,15 @@ async def tailor_resume(
             settings.rendered_docx_output,
         )
 
-        # Try PDF conversion
+        # Try PDF conversion and standardize filename
         rendered_pdf: Path | None = None
         message = "Resume tailored successfully."
         try:
-            rendered_pdf = pdf_service.convert_docx_to_pdf(rendered_docx, Path(settings.output_dir))
+            pdf_temp = pdf_service.convert_docx_to_pdf(rendered_docx, Path(settings.output_dir))
+            # Rename to standard name so download endpoint can find it
+            rendered_pdf = Path(settings.output_dir) / "tailored_resume.pdf"
+            if pdf_temp != rendered_pdf:
+                pdf_temp.rename(rendered_pdf)
         except RuntimeError:
             message = (
                 "Resume tailored successfully. PDF conversion unavailable on this host; "
@@ -184,9 +188,6 @@ async def tailor_resume(
             position_bullets = []
             for bullet in position["bullets"]:
                 tag = bullet["tag"]
-                if tag == "bullet":
-                    # Skip auto-assigned tags for now
-                    continue
                 original = flat_bullets.get(tag, "")
                 tailored = rewritten_bullets.get(tag, original)
                 position_bullets.append(
