@@ -55,25 +55,26 @@ class GeminiService:
         )
 
         prompt = (
-            "You are an expert technical resume writer and ATS optimization specialist.\n\n"
-            "Your task: Rewrite this resume's bullet points so they align with the role described below. "
-            "The job description may contain paragraphs, mixed formatting, or unclear structure-extract "
-            "the true responsibilities, required skills, and keywords before rewriting.\n\n"
-            "Rewrite rules:\n"
-            "- Preserve the original meaning and truthfulness of each bullet.\n"
-            "- Match the tone, vocabulary, and skill emphasis of the job description.\n"
-            "- Incorporate relevant keywords naturally (no keyword stuffing).\n"
-            "- Keep each rewritten bullet approximately the same length as the original to avoid layout shifts.\n"
-            "- Improve clarity, action verbs, and technical specificity.\n"
-            "- Do NOT invent experience Neil does not have.\n\n"
-            "Output format:\n"
-            "Return ONLY a JSON object where:\n"
-            "- Keys must remain exactly the provided tags (for example: bullet_1, bullet_2).\n"
-            "- Values are the rewritten bullet text.\n\n"
-            "Job Description (raw text, may be messy):\n"
-            f"{job_description}\n\n"
-            "Original Bullet Points:\n"
-            f"{bullet_lines}\n"
+            "You are an expert Technical Resume Writer and ATS Optimization Specialist.\n\n"
+            "### CRITICAL FILTERING RULES ###\n"
+            "The provided 'Job Description' may contain irrelevant 'rubbish' (e.g., salary, EEO statements, office perks, "
+            "application instructions, or company history). You MUST:\n"
+            "1. Mentally discard all administrative and non-functional text.\n"
+            "2. Extract ONLY the core technical requirements, hard skills, and functional responsibilities.\n"
+            "3. Use these extracted keywords to optimize the bullets provided below.\n\n"
+            
+            "### REWRITE RULES ###\n"
+            "- PRESERVE TRUTH: Do not invent experience or add technologies not mentioned in the original bullets.\n"
+            "- ATS OPTIMIZATION: Use the 'XYZ Formula' (Accomplished [X] as measured by [Y], by doing [Z]) where possible.\n"
+            "- ACTION VERBS: Start every bullet with a strong, high-impact action verb (e.g., 'Engineered', 'Architected', 'Streamlined').\n"
+            "- CONSTRAINTS: Keep rewritten bullets close to the original character count to prevent layout shifts.\n\n"
+            
+            "### OUTPUT FORMAT ###\n"
+            "Return ONLY a JSON object. Keys must match the input tags (e.g., 'bullet_1'). Values are the rewritten text.\n\n"
+            
+            "### INPUT DATA ###\n"
+            f"JOB DESCRIPTION (Raw):\n{job_description}\n\n"
+            f"ORIGINAL BULLETS:\n{bullet_lines}\n"
         )
 
         model = self._ensure_model()

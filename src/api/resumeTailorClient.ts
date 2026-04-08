@@ -1,5 +1,6 @@
 // API client for resume tailor backend
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const TAILOR_TIMEOUT_MS = 120000;
 
 export interface TailorRequest {
   job_description: string;
@@ -14,13 +15,27 @@ export interface TailorResponse {
 }
 
 export async function tailorResume(jobDescription: string): Promise<TailorResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/tailor`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ job_description: jobDescription }),
-  });
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), TAILOR_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/tailor`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ job_description: jobDescription }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("Tailoring timed out after 2 minutes. Please try again.");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const errorData = await response.json();

@@ -17,6 +17,7 @@
 - Added endpoint-specific rate limits for download/admin routes and security headers middleware (`nosniff`, frame deny, referrer policy, permissions policy).
 - Added `CORS_ORIGIN_REGEX` support for stable Vercel preview-domain preflight handling.
 - Updated frontend/backend dependencies and lockfiles from audit findings; npm and pip-audit now report no known package CVEs in project dependencies.
+- Improved frontend tailoring progress UX with request timeout handling, stage-based status messages under the progress bar, and ETA estimates based on recent run durations.
 - Added SlowAPI rate limiting (`5/minute`) on tailoring endpoint.
 - Added global error handlers for file-not-found and API timeout conditions with HTTP 500 responses.
 - Added backend setup/configuration docs and sample data/template guidance.

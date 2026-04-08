@@ -21,37 +21,120 @@ const fadeInUp = {
   }),
 };
 
+const DURATION_HISTORY_KEY = "resume-tailor-duration-history";
+const DEFAULT_ESTIMATED_SECONDS = 35;
+const MIN_ESTIMATED_SECONDS = 20;
+const MAX_ESTIMATED_SECONDS = 120;
+
+const getEstimatedDurationSeconds = (): number => {
+  try {
+    const raw = localStorage.getItem(DURATION_HISTORY_KEY);
+    if (!raw) return DEFAULT_ESTIMATED_SECONDS;
+
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return DEFAULT_ESTIMATED_SECONDS;
+
+    const validSamples = parsed
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value) && value >= 5 && value <= MAX_ESTIMATED_SECONDS);
+
+    if (validSamples.length === 0) return DEFAULT_ESTIMATED_SECONDS;
+
+    const average = validSamples.reduce((sum, value) => sum + value, 0) / validSamples.length;
+    return Math.max(MIN_ESTIMATED_SECONDS, Math.min(MAX_ESTIMATED_SECONDS, Math.round(average)));
+  } catch {
+    return DEFAULT_ESTIMATED_SECONDS;
+  }
+};
+
+const saveDurationSampleSeconds = (durationSeconds: number) => {
+  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) return;
+
+  try {
+    const raw = localStorage.getItem(DURATION_HISTORY_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+    const existing = Array.isArray(parsed) ? parsed : [];
+
+    const next = [...existing, durationSeconds]
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value) && value >= 5 && value <= MAX_ESTIMATED_SECONDS)
+      .slice(-10);
+
+    localStorage.setItem(DURATION_HISTORY_KEY, JSON.stringify(next));
+  } catch {
+    // If storage is unavailable, progress estimation still works with defaults.
+  }
+};
+
+const getStatusMessage = (currentProgress: number) => {
+  if (currentProgress < 25) return "Reading role requirements and key terms...";
+  if (currentProgress < 50) return "Rewriting your bullets for ATS alignment...";
+  if (currentProgress < 75) return "Mapping tailored content into your template...";
+  if (currentProgress < 95) return "Finalizing the resume and export files...";
+  return "Almost done, waiting for the final response...";
+};
+
 const Index = () => {
   const [file, setFile] = useState<File | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [etaSeconds, setEtaSeconds] = useState<number | null>(null);
   const [tailored, setTailored] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [showChanges, setShowChanges] = useState(false);
   const [tailorResult, setTailorResult] = useState<TailorResponse | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const slowHintTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const canTailor = file && jobDescription.trim().length > 10;
 
   const handleTailor = useCallback(async () => {
     if (!file || !canTailor) return;
+    const estimatedDurationSeconds = getEstimatedDurationSeconds();
+    const requestStart = Date.now();
+
     setLoading(true);
-    setProgress(0);
+    setProgress(10);
+    setStatusMessage("Preparing your request...");
+    setEtaSeconds(estimatedDurationSeconds);
     setTailored(false);
     setShowChanges(false);
     setTailorResult(null);
 
-    // Simulate progress while waiting for API
+    // Simulate progress while waiting for API using elapsed-time estimation.
     intervalRef.current = setInterval(() => {
-      setProgress((p) => (p >= 90 ? 90 : p + Math.random() * 12));
+      const elapsedSeconds = (Date.now() - requestStart) / 1000;
+      const elapsedRatio = Math.min(elapsedSeconds / Math.max(estimatedDurationSeconds, 1), 1.25);
+      const target = 10 + Math.min(85, elapsedRatio * 85);
+
+      setProgress((p) => {
+        const next = Math.min(95, Math.max(p + 0.5, target));
+        setStatusMessage(getStatusMessage(next));
+        const remaining = Math.max(0, estimatedDurationSeconds - Math.floor(elapsedSeconds));
+        setEtaSeconds(remaining > 0 ? remaining : null);
+        return next;
+      });
     }, 300);
+    slowHintTimeoutRef.current = setTimeout(() => {
+      toast.message("Still processing...", {
+        description: "This can take a bit longer on deployed servers.",
+      });
+    }, 15000);
 
     try {
       const result = await tailorResume(jobDescription);
 
       clearInterval(intervalRef.current);
+      clearTimeout(slowHintTimeoutRef.current);
+
+      const durationSeconds = Math.max(1, Math.round((Date.now() - requestStart) / 1000));
+      saveDurationSampleSeconds(durationSeconds);
+
       setProgress(100);
+      setStatusMessage("Done. Your tailored resume is ready.");
+      setEtaSeconds(null);
 
       setTimeout(() => {
         setLoading(false);
@@ -63,8 +146,11 @@ const Index = () => {
       }, 500);
     } catch (error) {
       clearInterval(intervalRef.current);
+      clearTimeout(slowHintTimeoutRef.current);
       setLoading(false);
       setProgress(0);
+      setStatusMessage("");
+      setEtaSeconds(null);
       toast.error("Something went wrong", {
         description: error instanceof Error ? error.message : "Could not tailor resume. Please try again.",
       });
@@ -154,6 +240,8 @@ const Index = () => {
               loading={loading}
               progress={progress}
               disabled={!canTailor}
+              statusMessage={statusMessage}
+              etaSeconds={etaSeconds}
             />
           </motion.div>
 

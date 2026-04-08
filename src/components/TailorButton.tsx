@@ -6,31 +6,48 @@ interface TailorButtonProps {
   loading: boolean;
   progress: number;
   disabled: boolean;
+  statusMessage?: string;
+  etaSeconds?: number | null;
 }
 
-const TailorButton = ({ onClick, loading, progress, disabled }: TailorButtonProps) => {
+const TailorButton = ({
+  onClick,
+  loading,
+  progress,
+  disabled,
+  statusMessage,
+  etaSeconds,
+}: TailorButtonProps) => {
   return (
     <div className="relative">
       <AnimatePresence mode="wait">
         {loading ? (
-          <motion.div
-            key="progress"
-            initial={{ opacity: 0, scaleX: 0.8 }}
-            animate={{ opacity: 1, scaleX: 1 }}
-            exit={{ opacity: 0, scaleX: 0.8 }}
-            className="progress-bar-track h-14 w-full"
-          >
+          <div className="space-y-2">
             <motion.div
-              className="progress-bar-fill h-full flex items-center justify-center"
-              initial={{ width: "0%" }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
+              key="progress"
+              initial={{ opacity: 0, scaleX: 0.8 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              exit={{ opacity: 0, scaleX: 0.8 }}
+              className="progress-bar-track h-14 w-full"
             >
-              <span className="text-primary-foreground font-semibold text-sm drop-shadow">
-                {Math.round(progress)}%
-              </span>
+              <motion.div
+                className="progress-bar-fill h-full flex items-center justify-center"
+                initial={{ width: "0%" }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              >
+                <span className="text-primary-foreground font-semibold text-sm drop-shadow">
+                  {Math.round(progress)}%
+                </span>
+              </motion.div>
             </motion.div>
-          </motion.div>
+            <p className="text-xs text-muted-foreground px-1 min-h-4">
+              {statusMessage}
+              {typeof etaSeconds === "number" && etaSeconds > 0
+                ? ` • ~${etaSeconds}s left`
+                : ""}
+            </p>
+          </div>
         ) : (
           <motion.button
             key="button"
