@@ -124,7 +124,7 @@ const Index = () => {
     }, 15000);
 
     try {
-      const result = await tailorResume(jobDescription);
+      const result = await tailorResume(jobDescription, file);
 
       clearInterval(intervalRef.current);
       clearTimeout(slowHintTimeoutRef.current);
@@ -157,20 +157,15 @@ const Index = () => {
     }
   }, [file, jobDescription, canTailor]);
 
-  const previewRows = tailorResult
-    ? Object.keys(tailorResult.original_bullets)
-        .sort()
-        .map((tag) => {
-          const original = tailorResult.original_bullets[tag] || "";
-          const updated = tailorResult.tailored_bullets[tag] || original;
-          return {
-            tag,
-            original,
-            updated,
-            changed: original.trim() !== updated.trim(),
-          };
-        })
-    : [];
+  const totalChangedBullets = tailorResult
+    ? tailorResult.positions.reduce((sum, pos) => {
+        return sum + pos.bullets.filter((b) => b.original.trim() !== b.tailored.trim()).length;
+      }, 0)
+    : 0;
+
+  const totalBullets = tailorResult
+    ? tailorResult.positions.reduce((sum, pos) => sum + pos.bullets.length, 0)
+    : 0;
 
   const handleExport = async (format: "pdf" | "docx") => {
     setExportOpen(false);
@@ -280,29 +275,39 @@ const Index = () => {
                   <div className="flex items-center justify-between">
                     <h3 className="text-base font-semibold text-foreground">What Changed</h3>
                     <span className="text-xs text-muted-foreground">
-                      {previewRows.filter((r) => r.changed).length} of {previewRows.length} bullets updated
+                      {totalChangedBullets} of {totalBullets} bullets updated
                     </span>
                   </div>
 
-                  <div className="space-y-3 max-h-[340px] overflow-auto pr-1">
-                    {previewRows.map((row) => (
-                      <div key={row.tag} className="rounded-lg border border-border/70 bg-secondary/30 p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground">{row.tag}</p>
-                          <span
-                            className={`text-[11px] px-2 py-0.5 rounded-full ${
-                              row.changed
-                                ? "bg-success/20 text-success"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {row.changed ? "Updated" : "Unchanged"}
-                          </span>
+                  <div className="space-y-5 max-h-[500px] overflow-auto pr-1">
+                    {tailorResult.positions.map((position) => (
+                      <div key={position.title} className="border-t border-border/50 pt-4">
+                        <h4 className="text-sm font-semibold text-foreground mb-3">{position.title}</h4>
+                        <div className="space-y-3">
+                          {position.bullets.map((bullet) => {
+                            const isChanged = bullet.original.trim() !== bullet.tailored.trim();
+                            return (
+                              <div key={bullet.tag} className="rounded-lg border border-border/70 bg-secondary/30 p-3">
+                                <div className="flex items-center justify-between mb-2">
+                                  <p className="text-xs uppercase tracking-wider text-muted-foreground">{bullet.tag}</p>
+                                  <span
+                                    className={`text-[11px] px-2 py-0.5 rounded-full ${
+                                      isChanged
+                                        ? "bg-success/20 text-success"
+                                        : "bg-muted text-muted-foreground"
+                                    }`}
+                                  >
+                                    {isChanged ? "Updated" : "Unchanged"}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mb-1">Original</p>
+                                <p className="text-sm text-foreground/90">{bullet.original}</p>
+                                <p className="text-xs text-muted-foreground mt-3 mb-1">Tailored</p>
+                                <p className="text-sm text-foreground">{bullet.tailored}</p>
+                              </div>
+                            );
+                          })}
                         </div>
-                        <p className="text-xs text-muted-foreground mb-1">Original</p>
-                        <p className="text-sm text-foreground/90">{row.original}</p>
-                        <p className="text-xs text-muted-foreground mt-3 mb-1">Tailored</p>
-                        <p className="text-sm text-foreground">{row.updated}</p>
                       </div>
                     ))}
                   </div>

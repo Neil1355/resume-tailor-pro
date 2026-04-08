@@ -2,8 +2,9 @@ from pathlib import Path
 from datetime import datetime, timezone
 from importlib.metadata import version
 import secrets
+import tempfile
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -11,10 +12,11 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from app.config import settings
-from app.models import TailorRequest, TailorResponse
+from app.models import TailorRequest, TailorResponse, PositionGroup, PositionBullet
 from app.services.gemini_service import GeminiService
 from app.services.pdf_service import PdfService
 from app.services.template_service import TemplateService
+from app.services.resume_parser import ResumeParser
 
 app = FastAPI(title=settings.app_name)
 
@@ -51,6 +53,7 @@ app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 template_service = TemplateService(settings.master_template)
 gemini_service = GeminiService(settings.google_api_key)
 pdf_service = PdfService(settings.libreoffice_bin)
+resume_parser = ResumeParser()
 
 
 @app.exception_handler(FileNotFoundError)
@@ -112,47 +115,101 @@ def security_summary(request: Request):
 
 @app.post("/api/tailor", response_model=TailorResponse)
 @limiter.limit(f"{settings.rate_limit_per_minute}/minute")
-def tailor_resume(request: Request, payload: TailorRequest) -> TailorResponse:
-    bullets = template_service.load_master_bullets(Path("app/data/master_bullets.json"))
+async def tailor_resume(
+    request: Request,
+    file: UploadFile = File(...),
+    job_description: str = Form(...),
+) -> TailorResponse:
+    """Tailor a user-provided resume DOCX against a job description."""
+    if not file.filename or not file.filename.lower().endswith(".docx"):
+        raise HTTPException(status_code=400, detail="Only DOCX files are supported.")
+
+    # Save uploaded file to temp location
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+        content = await file.read()
+        tmp.write(content)
+        tmp_path = Path(tmp.name)
+
     try:
-        rewritten_bullets = gemini_service.rewrite_bullets(payload.job_description, bullets)
-    except RuntimeError as exc:
-        message = str(exc).lower()
-        if "api_key_invalid" in message or "api key expired" in message or "api key" in message:
+        # Parse resume to extract positions and bullets
+        parsed_resume = resume_parser.parse_docx(tmp_path)
+        flat_bullets = resume_parser.extract_bullets_by_tag(tmp_path)
+
+        # Validate that we found bullets
+        if not flat_bullets:
+            raise HTTPException(
+                status_code=400,
+                detail="No bullet points found in resume. Ensure bullets are marked with bullet_N tags or bullet markers.",
+            )
+
+        # Rewrite bullets using Gemini
+        try:
+            rewritten_bullets = gemini_service.rewrite_bullets(job_description, flat_bullets)
+        except RuntimeError as exc:
+            message = str(exc).lower()
+            if "api_key_invalid" in message or "api key expired" in message or "api key" in message:
+                raise HTTPException(
+                    status_code=502,
+                    detail="Gemini API key is invalid or expired. Update GOOGLE_API_KEY in backend environment.",
+                ) from exc
             raise HTTPException(
                 status_code=502,
-                detail="Gemini API key is invalid or expired. Update GOOGLE_API_KEY in backend environment.",
+                detail="Gemini service request failed. Please try again shortly.",
             ) from exc
-        raise HTTPException(
-            status_code=502,
-            detail="Gemini service request failed. Please try again shortly.",
-        ) from exc
 
-    safe_context = bullets.copy()
-    safe_context.update({k: rewritten_bullets.get(k, bullets[k]) for k in bullets.keys()})
+        # Prepare context for template rendering (merge rewritten bullets)
+        safe_context = flat_bullets.copy()
+        safe_context.update({k: rewritten_bullets.get(k, flat_bullets[k]) for k in flat_bullets.keys()})
 
-    rendered_docx = template_service.render_docx(
-        safe_context,
-        settings.rendered_docx_output,
-    )
-    rendered_pdf: Path | None = None
-    message = "Resume tailored successfully."
-    try:
-        rendered_pdf = pdf_service.convert_docx_to_pdf(rendered_docx, Path(settings.output_dir))
-    except RuntimeError:
-        # On Linux hosts without LibreOffice, DOCX generation still succeeds.
-        message = (
-            "Resume tailored successfully. PDF conversion unavailable on this host; "
-            "DOCX output is ready."
+        # Render DOCX
+        rendered_docx = template_service.render_docx(
+            safe_context,
+            settings.rendered_docx_output,
         )
 
-    return TailorResponse(
-        message=message,
-        output_docx_path=str(rendered_docx),
-        output_pdf_path=str(rendered_pdf) if rendered_pdf else None,
-        original_bullets=bullets,
-        tailored_bullets=safe_context,
-    )
+        # Try PDF conversion
+        rendered_pdf: Path | None = None
+        message = "Resume tailored successfully."
+        try:
+            rendered_pdf = pdf_service.convert_docx_to_pdf(rendered_docx, Path(settings.output_dir))
+        except RuntimeError:
+            message = (
+                "Resume tailored successfully. PDF conversion unavailable on this host; "
+                "DOCX output is ready."
+            )
+
+        # Build position-grouped response
+        positions = []
+        for position in parsed_resume["positions"]:
+            position_bullets = []
+            for bullet in position["bullets"]:
+                tag = bullet["tag"]
+                if tag == "bullet":
+                    # Skip auto-assigned tags for now
+                    continue
+                original = flat_bullets.get(tag, "")
+                tailored = rewritten_bullets.get(tag, original)
+                position_bullets.append(
+                    PositionBullet(tag=tag, original=original, tailored=tailored)
+                )
+
+            if position_bullets:
+                positions.append(
+                    PositionGroup(title=position["title"], bullets=position_bullets)
+                )
+
+        return TailorResponse(
+            message=message,
+            output_docx_path=str(rendered_docx),
+            output_pdf_path=str(rendered_pdf) if rendered_pdf else None,
+            original_bullets=flat_bullets,
+            tailored_bullets=safe_context,
+            positions=positions,
+        )
+    finally:
+        # Clean up temp file
+        if tmp_path.exists():
+            tmp_path.unlink()
 
 
 @app.get("/api/download/{file_format}")

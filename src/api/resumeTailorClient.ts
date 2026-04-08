@@ -6,15 +6,31 @@ export interface TailorRequest {
   job_description: string;
 }
 
+export interface PositionBullet {
+  tag: string;
+  original: string;
+  tailored: string;
+}
+
+export interface PositionGroup {
+  title: string;
+  bullets: PositionBullet[];
+}
+
 export interface TailorResponse {
   message: string;
   output_docx_path: string;
   output_pdf_path: string | null;
   original_bullets: Record<string, string>;
   tailored_bullets: Record<string, string>;
+  positions: PositionGroup[];
 }
 
-export async function tailorResume(jobDescription: string): Promise<TailorResponse> {
+export async function tailorResume(jobDescription: string, resumeFile: File): Promise<TailorResponse> {
+  const formData = new FormData();
+  formData.append("file", resumeFile);
+  formData.append("job_description", jobDescription);
+
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), TAILOR_TIMEOUT_MS);
 
@@ -22,10 +38,7 @@ export async function tailorResume(jobDescription: string): Promise<TailorRespon
   try {
     response = await fetch(`${API_BASE_URL}/api/tailor`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ job_description: jobDescription }),
+      body: formData,
       signal: controller.signal,
     });
   } catch (error) {

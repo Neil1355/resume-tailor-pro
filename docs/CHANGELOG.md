@@ -18,6 +18,9 @@
 - Added `CORS_ORIGIN_REGEX` support for stable Vercel preview-domain preflight handling.
 - Updated frontend/backend dependencies and lockfiles from audit findings; npm and pip-audit now report no known package CVEs in project dependencies.
 - Improved frontend tailoring progress UX with request timeout handling, stage-based status messages under the progress bar, and ETA estimates based on recent run durations.
+- Added resume parsing service to extract job positions and bullet points from uploaded DOCX files.
+- Updated `/api/tailor` endpoint to accept file upload with FormData instead of static master bullets.
+- Enhanced "See What's Changed" preview to group bullets by job position/title, showing position headers with their associated before/after bullets.
 - Added SlowAPI rate limiting (`5/minute`) on tailoring endpoint.
 - Added global error handlers for file-not-found and API timeout conditions with HTTP 500 responses.
 - Added backend setup/configuration docs and sample data/template guidance.
